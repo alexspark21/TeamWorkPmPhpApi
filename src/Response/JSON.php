@@ -20,28 +20,15 @@ class JSON extends Model
         $errors = $this->getJsonErrors();
         $this->string = $data;
         if (!$errors) {
-            if (!(
-                $headers['Status'] === 201 ||
-                $headers['Status'] === 200 ||
-                $headers['Status'] === 409 ||
-                $headers['Status'] === 422
-            )) {
-                print_r($headers);
-                exit;
-            }
             if ($headers['Status'] === 201 || $headers['Status'] === 200) {
                 switch ($headers['Method']) {
-                    case 'UPLOAD':
-                        return empty($source->pendingFile->ref) ? null :
-                                            (string) $source->pendingFile->ref;
                     case 'POST':
-                        // print_r($headers);
                         if (!empty($headers['id'])) {
                             return (int) $headers['id'];
                         } elseif (!empty($source->fileId)) {
                             return (int) $source->fileId;
                         }
-                        // no break
+                    case 'PATCH':
                     case 'PUT':
                     case 'DELETE':
                          return true;
@@ -56,35 +43,16 @@ class JSON extends Model
                             $source = $source->project->notebooks;
                         } elseif (!empty($source->project->links)) {
                             $source = $source->project->links;
-                        } elseif (
-                            !empty($source->messageReplies) &&
-                            preg_match(
-                                '!messageReplies/(\d+)!',
-                                $headers['X-Action']
-                            )
-                        ) {
-                                $source = current($source->messageReplies);
-                        } elseif (
-                            !empty($source->people) &&
-                            preg_match(
-                                '!projects/(\d+)/people/(\d+)!',
-                                $headers['X-Action']
-                            )
-                        ) {
+                        } elseif (!empty($source->messageReplies) && preg_match('!messageReplies/(\d+)!', $headers['X-Action'])) {
+                            $source = current($source->messageReplies);
+                        } elseif (!empty($source->people) && preg_match('!projects/(\d+)/people/(\d+)!', $headers['X-Action'])) {
                             $source = current($source->people);
-                        } elseif (
-                            !empty($source->project) &&
-                            preg_match(
-                                '!projects/(\d+)/notebooks!',
-                                $headers['X-Action']
-                            )
-                        ) {
+                        } elseif (!empty($source->project) && preg_match('!projects/(\d+)/notebooks!', $headers['X-Action'])) {
                             $source = [];
                         } else {
                             $source = current($source);
                         }
-                        if ($headers['X-Action'] === 'links' ||
-                                        $headers['X-Action'] === 'notebooks') {
+                        if ($headers['X-Action'] === 'links' || $headers['X-Action'] === 'notebooks') {
                             $_source = [];
                             $wrapper = $headers['X-Action'];
                             foreach ($source as $project) {
@@ -93,10 +61,7 @@ class JSON extends Model
                                 }
                             }
                             $source = $_source;
-                        } elseif (
-                            strpos($headers['X-Action'], 'time_entries') > 0 &&
-                            !$source
-                        ) {
+                        } elseif (strpos($headers['X-Action'], 'time_entries') > 0 && !$source) {
                             $source = [];
                         }
                         $this->headers = $headers;

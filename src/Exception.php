@@ -19,6 +19,7 @@ class Exception extends \ErrorException
         }
         if (isset($errorInfo['Headers'])) {
             $this->headers = $errorInfo['Headers'];
+            $this->code = $errorInfo['Headers']['Status'] ? $errorInfo['Headers']['Status'] : '';
         }
     }
 
